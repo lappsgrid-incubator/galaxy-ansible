@@ -1,0 +1,22 @@
+---
+# Create Jetstream instances.  By default new VMs are created at IU.
+# To use this playbook you MUST source the openrc.sh file with your OpenStack 
+# API credentials for IU.
+- hosts: localhost
+  vars_files:
+    vars/jetstream.yml
+  tasks:
+    - name: Create Jetstream instance
+      os_server:
+        state: present
+        name: "{{ instance_name }}"
+        image: "{{ image }}"
+        flavor: "{{ flavor }}"
+        key_name: "{{ key }}"
+        security_groups: "{{ group }}"
+        floating_ips:
+          - "{{ ip }}"
+        nics:
+          - net-id: "{{ network }}"
+
+

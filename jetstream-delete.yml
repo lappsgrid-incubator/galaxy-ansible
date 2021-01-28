@@ -1,0 +1,12 @@
+---
+- hosts: localhost
+  vars_files:
+    vars/jetstream.yml
+  tasks:
+    - name: Delete Jetstream instance
+      os_server:
+        name: "{{ instance_name }}"
+        image: "{{ image }}"
+        state: absent
+    - name: Remove SSH key for the server
+      command: ssh-keygen -R {{ ip }}

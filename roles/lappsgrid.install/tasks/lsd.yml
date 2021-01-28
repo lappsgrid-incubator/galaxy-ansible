@@ -1,0 +1,42 @@
+---
+# Installs the Lapps Service DSL (LSD). Define the variable use_local_lsd to
+# install from file/lsd-latest.tgz.  Otherwise the archive is downloaded
+# from https://downloads.lappsgrid.org
+# It is recommended to use the version from downloads.lappsgrid.org
+- name: Ensure {{ lsd_root }} exists
+  file:
+    path: "{{ lsd_root }}"
+    state: directory
+    owner: "{{ real_user }}"
+- name: Install LSD from local copy
+  unarchive:
+    src: files/lsd-latest.tgz
+    dest: "{{ lsd_root }}"
+    owner: "{{ real_user }}"
+  when: use_local_lsd is defined
+- block:
+  - name: Download LSD from downloads.lappsgrid.org
+    get_url:
+      url: https://downloads.lappsgrid.org/lsd-latest.tgz
+      dest: /tmp
+  - name: Unpack the LSD tarball
+    unarchive:
+      src: /tmp/lsd-latest.tgz
+      dest: "{{ lsd_root }}"
+      owner: "{{ real_user }}"
+  - name: Remove the tarball
+    file:
+      path: /tmp/lsd-latest.tgz
+      state: absent
+  when: use_local_lsd is not defined
+- name: Create a link for lsd in /usr/local/bin
+  file:
+    src: "{{ lsd_root }}/lsd"
+    dest: /usr/local/bin/lsd
+    state: link
+    mode: u+x
+- name: Ensure permissions on script
+  file:
+    path: "{{ lsd_root }}/lsd"
+    owner: "{{ real_user }}"
+    mode: '0755'

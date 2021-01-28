@@ -1,0 +1,45 @@
+---
+- name: Change owner of the database directory
+  file:
+    dest: "{{ galaxy_server_dir }}/database"
+    owner: "{{ galaxy_user.name }}"
+    state: directory
+    recurse: yes
+- name: Clone mods repository from GitHub
+  git:
+    dest: "{{ tmp_dir }}"
+    repo: "{{ github_mods_repo }}"
+    version: "{{ github_mods_branch }}"
+    #version: master
+- name: Copy directories owned by the privileged user
+  vars:
+    real_user: "{{ galaxy_privsep_user if galaxy_separate_privileges else galaxy_user.name }}"
+  copy:
+    src: "{{ tmp_dir }}/{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ real_user }}"
+    remote_src: yes
+  loop:
+    - src: lib
+      dest: "{{ galaxy_server_dir }}"
+    - src: tools
+      dest: "{{ galaxy_server_dir }}"
+- name: Copy files and directories owned by the Galaxy user
+  copy:
+    src: "{{ tmp_dir }}/{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ galaxy_user.name }}"
+    remote_src: yes
+  loop:
+    - src: index.html
+      dest: "{{ galaxy_server_dir }}/static"
+    #- src: base.scss
+    #  dest: "{{ galaxy_server_dir }}/client/src/style/scss"
+    - src: config/datatypes_conf.xml
+      dest: "{{ galaxy_config_dir }}"
+    - src: config/tool_conf.xml
+      dest: "{{ galaxy_config_dir }}"
+- name: Install LSD
+  include_tasks: lsd.yml
+  vars:
+    - real_user: "{{ galaxy_privsep_user }}"

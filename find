@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+if [[ $# == 0 ]] ; then
+	echo "USAGE: ./find <string>"
+	exit 1
+fi
+
+find . -name "*.yml" | xargs grep $1
+
+

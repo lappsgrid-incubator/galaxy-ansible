@@ -1,0 +1,6 @@
+---
+# Where the Lapps Services DSL will be installed.
+lsd_root: /var/lib/lsd
+tmp_dir: /tmp/lappsgrid
+github_mods_repo: https://github.com/lappsgrid-incubator/GalaxyMods
+github_mods_branch: master
