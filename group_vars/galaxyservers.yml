@@ -2,7 +2,8 @@
 # To configure the installation change the location of the certificates and
 # change the galaxy_config.galaxy.admin_users
 # Location of the Lappsgrid certificate and key.
-nginx_ssl_src_dir: /Users/suderman/certs/2020
+#nginx_ssl_src_dir: /Users/suderman/certs/2020
+nginx_ssl_src_dir: /tmp
 nginx_conf_ssl_certificate: "lappsgrid.crt"
 nginx_conf_ssl_certificate_key: "lappsgrid.key"
 lappsgrid_hostname: jetstream.lappsgrid.org

@@ -10,6 +10,11 @@
       systemd:
         name: galaxy
         state: restarted
+      when: disable_systemd is not defined
+    - name: Restart Galaxy
+      debug:
+        msg: "Fake Galaxy restart"
+      when: disable_systemd is defined
   roles:
   - galaxyproject.postgresql
   - role: natefoo.postgresql_objects
@@ -21,6 +26,7 @@
   - role: uchida.miniconda
     become: true
     become_user: "{{ galaxy_user.name }}"
-  - usegalaxy_eu.galaxy_systemd
+  - role: usegalaxy_eu.galaxy_systemd
+    when: disable_systemd is not defined
   - galaxyproject.nginx
   - geerlingguy.java

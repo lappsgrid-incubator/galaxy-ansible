@@ -36,7 +36,6 @@
     port: "{{ postgresql_objects_port | default(omit) }}"
   with_items: "{{ postgresql_objects_databases }}"
   when: item.state is defined and item.state == 'absent'
-
 - name: Create and drop users
   postgresql_user:
     name: "{{ item.name }}"
@@ -49,7 +48,6 @@
     login_password: "{{ postgresql_objects_login_password | default(omit) }}"
     port: "{{ postgresql_objects_port | default(omit) }}"
   with_items: "{{ postgresql_objects_users }}"
-
 - name: Create groups
   postgresql_user:
     name: "{{ item.name }}"
