@@ -20,7 +20,7 @@ anisble-playbook jetstream.yml # Provisions an instance on Jetstream
 ansible-playbook jetstream-delete.yml # Destroys the above instance
 ```
 
-**NOTE** a newly provisioned  Jetstream instance will spend some time updating packages.  The older the  image is the longer this update will take. After the system updates it will need to be rebooted.  Unfortunately it is not easy (possible?) to have Ansible perform this step so you must log in to the instance to check if the update is complete.  Run `apt update -y` on the instance, if you get a file locking error the update is still in progress.  If you can run the `apt update` command without an error it is safe to reboot the instance.
+**NOTE** a newly provisioned  Jetstream instance will spend some time updating packages.  The older the  image is the longer this update will take. After the system updates it will need to be rebooted.  Unfortunately it is not easy (possible?) to have Ansible perform this step so you must log in to the instance to check if the update is complete.  Run `apt upgrade -y` on the instance, if you get a file locking error the update is still in progress.  If you can run the `apt upgrade` command without an error it is safe to reboot the instance.
 
 **WARNING** Take great care that you do not destroy production servers with the `jetstream-delete.yml` playbook!
 

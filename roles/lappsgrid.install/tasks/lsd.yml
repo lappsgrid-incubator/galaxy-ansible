@@ -24,6 +24,7 @@
       src: /tmp/lsd-latest.tgz
       dest: "{{ lsd_root }}"
       owner: "{{ real_user }}"
+      remote_src: yes
   - name: Remove the tarball
     file:
       path: /tmp/lsd-latest.tgz
