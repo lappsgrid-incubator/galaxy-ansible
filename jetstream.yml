@@ -6,17 +6,41 @@
   vars_files:
     vars/jetstream.yml
   tasks:
-    - name: Create Jetstream instance
-      os_server:
+
+    - name: Query the featured recent Ubuntu image
+      openstack.cloud.image_info:
+        image: "{{ image_name }}"
+      register: image_info
+
+    - name: Query the featured recent Ubuntu image
+      openstack.cloud.networks_info:
+        name: "auto_allocated_network"
+      register: networks_info
+
+    - name: Query for an open floating IP
+      openstack.cloud.floating_ip_info:
+        floating_network: "public"
+        status: "down"
+      register: fip_info
+
+    # - debug:
+        # msg: "{{ fip_info.floating_ips[0].name }}"
+
+    - name: Create Jetstream instance for galaxy
+      # when: 0>1
+      openstack.cloud.server:
         state: present
         name: "{{ instance_name }}"
-        image: "{{ image }}"
+        image: "{{ image_info.image.id }}"
         flavor: "{{ flavor }}"
         key_name: "{{ key }}"
-        security_groups: "{{ group }}"
+        security_groups: "{{ sec_group }}"
         floating_ips:
-          - "{{ ip }}"
+          - "{{ fip_info.floating_ips[0].name }}"
         nics:
-          - net-id: "{{ network }}"
+          - net-id: "{{ networks_info.openstack_networks[0].id }}"
+
+    - name: set local hosts file
+      command: "sed -i\"\" -E 's/jetstream ansible_host=.+/jetstream ansible_host={{ fip_info.floating_ips[0].name }}/g' hosts"
 
 

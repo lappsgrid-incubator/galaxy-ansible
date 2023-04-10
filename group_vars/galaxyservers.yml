@@ -3,7 +3,7 @@
 # change the galaxy_config.galaxy.admin_users
 # Location of the Lappsgrid certificate and key.
 #nginx_ssl_src_dir: /Users/suderman/certs/2020
-nginx_ssl_src_dir: "/Users/krim/Dropbox/Projects/lapps/jetstream/ansible-lapps"
+nginx_ssl_src_dir: "/tmp"
 nginx_conf_ssl_certificate: "lappsgrid.crt"
 nginx_conf_ssl_certificate_key: "lappsgrid.key"
 lappsgrid_hostname: 149.165.156.190
@@ -41,7 +41,7 @@ miniconda_manage_dependencies: false
 
 galaxy_config:
   galaxy:
-    admin_users: suderman@cs.vassar.edu
+    admin_users: krim@brandeis.edu
     brand: Lapps/Galaxy
     database_connection: "postgresql:///galaxy?host=/var/run/postgresql"
     file_path: /data
