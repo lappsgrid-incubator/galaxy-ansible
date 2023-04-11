@@ -55,14 +55,14 @@ Now we are ready to run the Jetstream playbook:
 $ ansible-playbook jetstream.yml
 ```
 
-A newly provisioned  Jetstream instance will spend some time updating packages. Unless you used a fully specified base image (the `Featured-Ubuntu20` used in the example `vars/jetstream.yml` is a UNDERSPECIFIED image and [is kept up to date by the JS2 team](https://docs.jetstream-cloud.org/general/featured/)), it should take long to update, and a reboot won't be necessary after the update. But if you're using a fully versioned image, the older the image the longer this update will take. After the updates the system might need to be rebooted. Unfortunately it is not easy (or even possible?) to have Ansible perform this step so you must log in to the instance to check if the update is complete.
+A newly provisioned  Jetstream instance will spend some time updating packages. Unless you used a fully specified base image (the `Featured-Ubuntu20` used in the example `vars/jetstream.yml` is a UNDERSPECIFIED image and [is kept up to date by the JS2 team](https://docs.jetstream-cloud.org/general/featured/)), it shouldn't take long to update, and a reboot won't be necessary after the update. But if you're using a fully versioned image, the older the image the longer this update will take. After the updates the system might need to be rebooted. Unfortunately it is not easy (or even possible?) to have Ansible perform this step so you must log in to the instance to check if the update is complete.
 
 ```bash
 $ ssh -i <YOUR_PEM_FILEPATH> <USERNAME>@<IP_OF_NEW_INSTANCE>
 ```
 
 * `pem` file is, of course, the file from keypair attached to the openstack instance. 
-* `username` depends on the base image. For Featured-Ubuntu ones, it'd be `ubuntu`
+* `username` depends on the base image. For `Featured-UbuntuX` ones, it'd be `ubuntu`
 * `ip` is the floating IP, now fixed to the new instance. Note that `jetstream.yml` playbook will use the first unused floating IP from the fIP list to start the instance, and update `hosts` file. Thus you can peek at the hosts file to get the IP address used for the instance. 
 
 Run `apt upgrade -y` on the instance, if you get a file locking error the update is still in progress. If so, wait a couple of minutes and try again. If you can run the `apt upgrade` command without an error it is safe to reboot the instance with `shutdown -r now`. 
