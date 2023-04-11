@@ -1,11 +1,7 @@
 ---
 # Variables used when creating Jetstream instances.
-instance_name: galaxy-admin-training
-#image: 1cd99fc9-5f93-4825-830c-0c293a30107c
-#image: fdab8084-c23d-443e-b4c8-ae53a6571e73 * lappsgrid-ubuntu-18.04
-image: a08024c8-a600-4428-8d56-5efb46469589
-flavor: m1.quad
-key: lappsgrid-shared-key
-group: galaxy
-ip: 149.165.156.140
-network: 588397c7-8d91-4db4-b3ea-9d293209221f
+instance_name: lapps-galaxy
+image_name: "Featured-Ubuntu20"
+flavor: m3.quad
+key: js2-galaxy-dev
+sec_group: exosphere

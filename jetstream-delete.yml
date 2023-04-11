@@ -3,10 +3,18 @@
   vars_files:
     vars/jetstream.yml
   tasks:
-    - name: Delete Jetstream instance
+
+    - name: Get IP address assgined for galaxy instance 
+      openstack.cloud.server_info:
+        server: "{{ instance_name }}"
+      register: server_info
+
+    # - debug:
+        # msg: "{{ server_info.openstack_servers[0].accessIPv4 }}"
+
+    - name: Delete Jetstream instance for galaxy
       os_server:
         name: "{{ instance_name }}"
-        image: "{{ image }}"
         state: absent
     - name: Remove SSH key for the server
-      command: ssh-keygen -R {{ ip }}
+      command: "ssh-keygen -R {{ server_info.openstack_servers[0].accessIPv4 }}"
