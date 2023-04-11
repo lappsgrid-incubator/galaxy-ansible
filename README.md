@@ -15,53 +15,29 @@ The rest of this document lays out the steps to a working LAPPS/Galaxy instance 
 
 ## Requirements
 
-You need Python 3.8 or higher and then install the Ansible and Openstack packages:
+You need Python 3.8 or higher and then install the ansible and openstack packages. See  `requirements.txt` for python dependencies (ansible is a python app)
 
-```bash
-$ pip install ansible
-$ pip install openstacksdk
-```
+See [docs.ansible.com](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) for more details on installing ansible. Installing ansible will take a couple of minutes.
 
-See [docs.ansible.com](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) for more details on installing Ansible. Installing Ansible will take a couple of minutes.
+Then see [JetStream2 application-credentials](https://docs.jetstream-cloud.org/ui/cli/auth/#setting-up-application-credentials-and-openrcsh-for-the-jetstream2-cli) to obtain a script to set shell environment with openstack credentials. 
 
-> Figuring out the environment was a bit of a hassle for me (Marc). No matter what I did Ansible kept using Python 3.7, or sometimes claimed it did and yet you could see 3.8 in the dribble. Running the JetStream playbook always gave the error "openstacksdk is required for this module". Only after I said farewell to virtual environments and installed OpenStack on both Python 3.7 and 3.8 did it work. Also, on my iMac, but not my laptop, I had to add a line `interpreter_python = /usr/local/bin/python3` to `ansible.cfg`.
+Next you have to have an open floating IP address to hook up the Galaxy web interface for public access. 
 
-<u>JetStream credentials</u>. You need access to JetStream via a file named `TG-DBS170008-openrc-v3.sh`, which has your credentials for connecting to the OpenStack cloud and getting access to the LAPS Grid project (which has the identfifier TG-DBS170008). We assume you have an account on Xsede and TACC and access to the LAPPS Grid project allocation. With that in place you can log on to [https://iu.jetstream-cloud.org/](https://iu.jetstream-cloud.org/) and go to the pulldown with your username at the top right, select "OpenStack RC File v3" and the needed file will be downloaded. Put the file at the top-level of this repository (do NOT add it to the repository). You source the file to set some environment variables:
-
-```bash
-$ source TG-DBS170008-openrc.sh
-```
-
-You will be asked you for your TACC password.
-
-<u>IP Address</u>. The setup at some point requires you to define an available floating IP address. To get such an address you go to [https://iu.jetstream-cloud.org/](https://iu.jetstream-cloud.org/) and select "Project > Network > Floating IPs", then pick a IP address that is not mapped to a fixed IP address. You can also do this with the openstack command which is added when you installed the openstack client:
-
-> Note that the `openstack` command works only after you **sourced** the openrc shell file. Also, sourcing the file affects only the current shell session. If you open a new terminal tab/window and want to use openstack command there, you need to source the file again in the new session.)
-
-
-```bash
+``` bash 
 $ openstack floating ip list
+# see if there's a floating IP (public) address that has `None` fixed IP (private subnet address))
+# if none found
+$ openstack floating ip create public
+# public is the default network name automatically allocated by the JS2
 ```
 
-To create a new floating IP address:
-
-```bash
-$ openstack floating ip create 4367cd20-722f-4dc2-97e8-90d98c25f12e
-```
-
-The argument is the network name or address, in this case it is the identifier of the `public` network. See [docs.openstack.org](https://docs.openstack.org/python-openstackclient/pike/cli/command-objects/floating-ip.html) for details.
-
-<u>SSH Keys and SSL/TLS certificates</u>. You need a couple of keys and certificates. The key mentioned in the configuration files (see below) is `lappsgrid-shared-key.pem`. However, rumor has it that the process only works with keys created by the user (as specifed in the `openrc.sh` file) itself so you may need to create your own key. At [https://iu.jetstream-cloud.org/](https://iu.jetstream-cloud.org/) select "Project > Compute > Key Pairs", save the private key locally in this repository as `jetstream.pem` (any name is fine, but it may need the `pem` extension).
-
->  But all that doesn't really make sense, because then only the person creating the key and the instance can get access to the instance, so some experiments are needed.
-
-You also need to get two more files `lappsgrid.crt` and `lappsgrid.key` from somebody in the LAPPS team. Those will be needed when Galaxy is added to the instance.
+Finally, you also need to get two more files `lappsgrid.crt` and `lappsgrid.key` from somebody in the LAPPS team. Those will be needed when Galaxy is added to the instance.
 
 > **Do NOT add the keys and certificate to the repository.**
 
 ## Creating a JetStream Instance
 
-To simplify testing there are two playbooks that can be used to provision and destroy instances on the Indiana Jetstream cluster.
+To simplify testing there are two playbooks that can be used to provision and destroy instances on the Indiana JetStream cluster.
 
 ```bash
 $ anisble-playbook jetstream.yml         # Provisions an instance on Jetstream
@@ -70,40 +46,8 @@ $ ansible-playbook jetstream-delete.yml  # Destroys the above instance
 
 **WARNING**. Take great care that you do not destroy production servers with the `jetstream-delete.yml` playbook!
 
-All parameters for the instance created are specfied in `vars/jetstream.yml` file. Edit that file to define an instance name, pick an available IP address and update the key if needed. Here is what is in the version of `vars/jetstream.yml` that is commited to the repository:
-
-```yml
----
-instance_name: galaxy-admin-training
-image: a08024c8-a600-4428-8d56-5efb46469589
-flavor: m1.quad
-key: lappsgrid-shared-key
-group: galaxy
-ip: 149.165.156.140
-network: 588397c7-8d91-4db4-b3ea-9d293209221f
-```
-And here is the same file after making some needed changes and with comments added:
-
-```yml
----
-# Make sure you use a new unique instance name.
-instance_name: galaxy-admin-training-3
-# The id of the image named "Ubuntu 18.04 Devel and Docker v.1.35",
-# does not need to be changed.
-image: a08024c8-a600-4428-8d56-5efb46469589
-# Using a 20GB machine with 4 CPU's 10GB of RAM, change if needed.
-flavor: m1.quad
-# Specify another key if needed, does not need the pem extension.
-key: key-marc
-# Use the galaxy security group, do not change.
-group: galaxy
-# Use an available floating IP address.
-ip: 149.165.157.140
-# This is the network named lappsgrid-network, do not change.
-network: 588397c7-8d91-4db4-b3ea-9d293209221f
-```
-
-> The key file may have to be in the directory that you run ansible from, but this was not verified and it is possible that at this point we only need the name of the key and that it has to be a key defined on OpenStack.
+All parameters for the instance created are specified in `vars/jetstream.yml` file.  Edit that file to define an instance name, the ssh key if needed.  The value for the `key` (ssh key) must match a `keypair` name stored under your JS2 account (You may change the name of you local `.pem` file associated to the keypair, but you need to keep track of which file is from which keypair). Also, note that with a high chance of the galaxy instance being worked by different developers, this `pem` file should shared among in the dev team for shared access. Only the person who start the instance can specify a keypair to use under her/his account, so IT IS THE PERSON'S RESPONSIBILITY to ensure the `pem` part of the key is shared. 
+You can also configure the base image name, HW specs, and security group name (firewall rules), if you want, but you probably won't. 
 
 Now we are ready to run the Jetstream playbook:
 
@@ -111,17 +55,17 @@ Now we are ready to run the Jetstream playbook:
 $ ansible-playbook jetstream.yml
 ```
 
-Use -v for a verbose dribble or -vvv for an extremely verbose dribble. When I ran this I had no keys or certificates availabele yet, just the environment variables set by sourcing the `TG-DBS170008-openrc.sh` file.
-
-> It is possible that this caused my problems later on, to be experimented with.
-
-The instance is NOT READY immediately after the ansible-playbook ran without an error. A newly provisioned  Jetstream instance will spend some time updating packages. The older the image the longer this update will take. After the updates the system will need to be rebooted. Unfortunately it is not easy (or even possible?) to have Ansible perform this step so you must log in to the instance to check if the update is complete. SSH in as root using the available IP address and the key:
+A newly provisioned  Jetstream instance will spend some time updating packages. Unless you used a fully specified base image (the `Featured-Ubuntu20` used in the example `vars/jetstream.yml` is a UNDERSPECIFIED image and [is kept up to date by the JS2 team](https://docs.jetstream-cloud.org/general/featured/)), it should take long to update, and a reboot won't be necessary after the update. But if you're using a fully versioned image, the older the image the longer this update will take. After the updates the system might need to be rebooted. Unfortunately it is not easy (or even possible?) to have Ansible perform this step so you must log in to the instance to check if the update is complete.
 
 ```bash
-$ ssh -i ~/.ssh/key-marc.pem root@149.165.157.140
+$ ssh -i <YOUR_PEM_FILEPATH> <USERNAME>@<IP_OF_NEW_INSTANCE>
 ```
 
-Run `apt upgrade -y` on the instance, if you get a file locking error the update is still in progress. If so, wait a couple of minutes and try again. If you can run the `apt upgrade` command without an error it is safe to reboot the instance with `shutdown -r now`. At that point you will be kicked out of the remote shell, if you want to SSH back in just wait a few minutes.
+* `pem` file is, of course, the file from keypair attached to the openstack instance. 
+* `username` depends on the base image. For Featured-Ubuntu ones, it'd be `ubuntu`
+* `ip` is the floating IP, now fixed to the new instance. Note that `jetstream.yml` playbook will use the first unused floating IP from the fIP list to start the instance, and update `hosts` file. Thus you can peek at the hosts file to get the IP address used for the instance. 
+
+Run `apt upgrade -y` on the instance, if you get a file locking error the update is still in progress. If so, wait a couple of minutes and try again. If you can run the `apt upgrade` command without an error it is safe to reboot the instance with `shutdown -r now`. 
 
 After this you have an instance ready with Ubuntu and Docker, but not a trace of Galaxy and the Lapps Grid.
 
@@ -134,7 +78,7 @@ Edit `group_vars/galaxyservers.yml` file and change the following variables:
 - `nginx_ssl_src_dir`: this is the location on the local machine that contains the Lappsgrid certificate and private key
 - `nginx_conf_ssl_certificate`: the name of the lappsgrid certificate file
 - `nginx_conf_ssl_certificate_key`: the name of the lappsgrid private key file
-- `lappsgrid_hostname`: the host name of the server that will be hosting the Galaxy instance.
+- `lappsgrid_hostname`: the host name of the server that will be hosting the Galaxy instance. 
 - `galaxy_config.galaxy.admin_users`: the email address(es) of the user accounts that will be granted admin permissions in Galaxy.  Note that the Galaxy user accounts are not created but any user that registers with one of these email addresses will be granted *admin* status.
 
 Notes and questions:
@@ -142,50 +86,28 @@ Notes and questions:
 - This is where the lappsgrid certificate and key come in (`lappsgrid.crt` and `lappsgrid.key`). Wherever you put them locally is what you use. Still no idea how they were created.
 - Not sure what permissions to use on the certificate and key. I used 600.
 - You will not need to change the name of the lappsgrid certificate and private key, unless new leys are generated under a different name.
+- Galaxy will only listen to incoming traffic to `lappsgrid_hostname` address. If you 
 
 Edit the `hosts` file, which looks like this in the repository.
 
 ```properties
 [localhost]
-127.0.0.1 ansible_connection=local ansible_python_interpreter="/usr/bin/python"
+127.0.0.1 ansible_connection=local ansible_python_interpreter="/usr/bin/python"  # your local python path, and it should be, of course, not any python, but the python where you installed openstack and ansible packages
 
 [galaxyservers]
-jetstream ansible_host=149.165.156.140
+jetstream ansible_host=149.165.156.140  # set automatically by the jetstream.yml playbook, don't touch.
 
 [galaxyservers:vars]
-ansible_ssh_private_key_file=~/.ssh/lappsgrid-shared-key.pem
-ansible_ssh_user=root
-ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_private_key_file=~/.ssh/some-key-from-keypair.pem  # the `pem` file mentioned above
+ansible_ssh_user=ubuntu  # the `username` mentioned above
+ansible_python_interpreter=/usr/bin/python3  # python path in the jetstream instance. This is the almost universal python path in major linux distros, so probably don't touch
 ```
-Anything under the `localhost` section is irrelevant. In the `galaxyservers` and its associated `vars`, use the IP address from `vars/jetstream.yml` (`149.165.157.140`) and change the key if needed (to `~/.ssh/key-marc.pem`). Note that the command `/usr/bin/python` on the instance created above is python2, it almost seems like parts of ansible reply on Python2 (see below).
 
-In any case we can now run the playbook:
+Then, to install lapps-galaxy in the new JS2 instance, 
 
 ```bash
 $ ansible-playbook galaxy.yml
 ```
-
-In my case this ran for a couple of minutes then broke in the step where it installs Galaxy base dependencies. More precisely, it fails on this command:
-
-```bash
-$ /srv/galaxy/venv/bin/pip3 install \
-    --index-url https://wheels.galaxyproject.org/simple/ \
-    --extra-index-url https://pypi.python.org/simple \
-    -r /srv/galaxy/server/lib/galaxy/dependencies/pinned-requirements.txt
-```
-
-The end of the stack trace is
-
-```
-    File "/tmp/pip-install-lwaxbyoq/futures_a13076a324a344b2b152c0a92ab08ba6/concurrent/futures/_base.py", line 381
-      raise exception_type, self._exception, self._traceback
-```
-
-Which looks like we have a Python2 raise statement and Python3 chokes on it.
-
-But for Keigh this worked.
-
-> I (Keigh) did upgrade the galaxy to install to 21.09, instead of 20.09. I remember (vaguely) that the reason I tried a newer version was because I was getting some kind of error when tried the configuration as it was, but I can't remember that error was the same error that Marc got (`futures/_base.py:381`). To upgrade the galaxy version, go to `group_vars/galaxyservers.yml` file and change the line with `galaxy_commit_id`. To see all available versions of galaxy, visit https://github.com/galaxyproject/galaxy and check the list of git tags. 
 
 This playbook assumes Galaxy is the only application running on the server and puts Galaxy's directories in the root folders `/srv` and `/data`. This can be changed by editing the variables `postgresql_backup_dir`, `galaxy_root` and `galaxy_config.galaxy.file_path` in the `group_vars/galaxyservers.yml` file.
 
