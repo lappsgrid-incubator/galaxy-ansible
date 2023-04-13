@@ -84,5 +84,17 @@
     - name: edit ssh-config
       shell: echo "Host services\n  HostName {{  hostvars['localhost']['server_info']['openstack_servers'][0]['addresses']['auto_allocated_network'][0]['addr'] }}\n  User ubuntu\n  IdentityFile ~/.ssh/js2-galaxy-dev.pem\n  StrictHostKeyChecking=no\n" > ~/.ssh/config
 
-
-
+    - name: copy the shared ssh key file for user
+      ansible.builtin.copy:
+        src: "{{ ansible_ssh_private_key_file }}"
+        dest: /home/ubuntu/.ssh/
+        owner: ubuntu
+        group: ubuntu
+        mode: '0600'
+    - name: copy the shared ssh key file for root
+      ansible.builtin.copy:
+        src: "{{ ansible_ssh_private_key_file }}"
+        dest: /root/.ssh/
+        owner: root
+        group: root
+        mode: '0600'

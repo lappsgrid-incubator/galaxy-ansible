@@ -3,4 +3,5 @@
 lsd_root: /var/lib/lsd
 tmp_dir: /tmp/lappsgrid
 github_mods_repo: https://github.com/lappsgrid-incubator/GalaxyMods
-github_mods_branch: master
+github_mods_branch: jetstream
+use_local_lsd: true

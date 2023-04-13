@@ -30,3 +30,8 @@
     when: disable_systemd is not defined
   - galaxyproject.nginx
   - geerlingguy.java
+  tasks:
+    - name: start service 
+      shell: "ssh -o StrictHostKeyChecking=no -i /home/ubuntu/.ssh/js2-galaxy-dev.pem ubuntu@services docker run -d --rm -p 5050:8080 ghcr.io/lappsgrid-services/bigtent:230315"
+
+
