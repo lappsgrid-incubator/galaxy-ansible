@@ -27,7 +27,6 @@
         # msg: "{{ fip_info.floating_ips[0].name }}"
 
     - name: Create Jetstream instance for galaxy
-      # when: 0>1
       openstack.cloud.server:
         state: present
         name: "{{ instance_name }}"
@@ -41,6 +40,49 @@
           - net-id: "{{ networks_info.openstack_networks[0].id }}"
 
     - name: set local hosts file
-      command: "sed -i\"\" -E 's/jetstream ansible_host=.+/jetstream ansible_host={{ fip_info.floating_ips[0].name }}/g' hosts"
+      command: "sed -i\"\" -E 's/jetstream ansible_host=.*/jetstream ansible_host={{ fip_info.floating_ips[0].name }}/g' hosts"
+
+    - name: Create Jetstream instance for services
+      openstack.cloud.server:
+        state: present
+        name: "{{ instance_name }}-services"
+        image: "{{ image_info.image.id }}"
+        flavor: "{{ flavor }}"
+        key_name: "{{ key }}"
+        auto_ip: false
+        security_groups: "{{ sec_group }}"
+        nics:
+          - net-id: "{{ networks_info.openstack_networks[0].id }}"
+      register: services_node_server
+
+    # - debug:
+        # msg: "{{ services_node_server.server.addresses.auto_allocated_network[0].addr }}"
+
+    - name: Get information about services instance
+      openstack.cloud.server_info:
+        server: "{{ instance_name }}-services"
+      register: server_info
+
+    # - debug:
+        # msg: "{{ server_info }}"
+
+    # - debug:
+        # msg: "{{ server_info.openstack_servers[0].addresses.auto_allocated_network[0].addr }}"
+
+    - name: Pause for 1 minutes for the instance for galaxy to boot up
+      ansible.builtin.pause:
+        minutes: 1
+
+- hosts: galaxyservers
+  vars_files:
+    vars/jetstream.yml
+  tasks:
+
+    - name: edit etc-hosts
+      shell: "echo {{ hostvars['localhost']['server_info']['openstack_servers'][0]['addresses']['auto_allocated_network'][0]['addr'] }} services | sudo tee -a /etc/hosts"
+
+    - name: edit ssh-config
+      shell: echo "Host services\n  HostName {{  hostvars['localhost']['server_info']['openstack_servers'][0]['addresses']['auto_allocated_network'][0]['addr'] }}\n  User ubuntu\n  IdentityFile ~/.ssh/js2-galaxy-dev.pem\n  StrictHostKeyChecking=no\n" > ~/.ssh/config
+
 
 

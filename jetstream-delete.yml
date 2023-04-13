@@ -16,5 +16,15 @@
       os_server:
         name: "{{ instance_name }}"
         state: absent
+      ignore_errors: true
+
     - name: Remove SSH key for the server
       command: "ssh-keygen -R {{ server_info.openstack_servers[0].accessIPv4 }}"
+      ignore_errors: true
+
+    - name: Delete Jetstream instance for galaxy services
+      os_server:
+        name: "{{ instance_name }}-services"
+        state: absent
+      ignore_errors: true
+
