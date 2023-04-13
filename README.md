@@ -35,13 +35,13 @@ Finally, you also need to get two more files `lappsgrid.crt` and `lappsgrid.key`
 
 > **Do NOT add the keys and certificate to the repository.**
 
-## Creating a JetStream Instance
+## Creating JetStream Instances
 
-To simplify testing there are two playbooks that can be used to provision and destroy instances on the Indiana JetStream cluster.
+To simplify testing there are two playbooks that can be used to provision and destroy instances on the JS2 cluster. 
 
 ```bash
-$ anisble-playbook jetstream.yml         # Provisions an instance on Jetstream
-$ ansible-playbook jetstream-delete.yml  # Destroys the above instance
+$ anisble-playbook jetstream.yml         # Provisions instances on Jetstream
+$ ansible-playbook jetstream-delete.yml  # Destroys the above instances
 ```
 
 **WARNING**. Take great care that you do not destroy production servers with the `jetstream-delete.yml` playbook!
@@ -55,7 +55,12 @@ Now we are ready to run the Jetstream playbook:
 $ ansible-playbook jetstream.yml
 ```
 
-A newly provisioned  Jetstream instance will spend some time updating packages. Unless you used a fully specified base image (the `Featured-Ubuntu20` used in the example `vars/jetstream.yml` is a UNDERSPECIFIED image and [is kept up to date by the JS2 team](https://docs.jetstream-cloud.org/general/featured/)), it shouldn't take long to update, and a reboot won't be necessary after the update. But if you're using a fully versioned image, the older the image the longer this update will take. After the updates the system might need to be rebooted. Unfortunately it is not easy (or even possible?) to have Ansible perform this step so you must log in to the instance to check if the update is complete.
+After this, there will be two newly provisioned Jetstream instances: `{{ instance_name }}` and `{{ instance_name }}-services`, 
+
+### The first one 
+will spend some time updating packages. Unless you used a fully specified base image (the `Featured-Ubuntu20` used in the example `vars/jetstream.yml` is a UNDERSPECIFIED image and [is kept up to date by the JS2 team](https://docs.jetstream-cloud.org/general/featured/)), it shouldn't take long to update, and a reboot won't be necessary after the update. 
+
+But if you're using a fully versioned image, the older the image the longer this update will take. After the updates the system might need to be rebooted. Unfortunately it is not easy (or even possible?) to have Ansible perform this step so you must log in to the instance to check if the update is complete.
 
 ```bash
 $ ssh -i <YOUR_PEM_FILEPATH> <USERNAME>@<IP_OF_NEW_INSTANCE>
@@ -67,7 +72,15 @@ $ ssh -i <YOUR_PEM_FILEPATH> <USERNAME>@<IP_OF_NEW_INSTANCE>
 
 Run `apt upgrade -y` on the instance, if you get a file locking error the update is still in progress. If so, wait a couple of minutes and try again. If you can run the `apt upgrade` command without an error it is safe to reboot the instance with `shutdown -r now`. 
 
-After this you have an instance ready with Ubuntu and Docker, but not a trace of Galaxy and the Lapps Grid.
+After this you have an instance ready with Ubuntu, but not a trace of Galaxy and the Lapps Grid.
+
+### The second instance 
+will NOT have a public IP, thus cannot be accessed from the outside the JS2 network, including any malicious attempts. The only way to ssh into the second machine is via the first instance, using the same `pem` file. For your convenience, the `jetstream.yml` playbook also configures the first instance with 
+1. the `pem` file copied over
+1. a ssh alias `services` that points to the second instance
+1. `services` entry in `/etc/hosts` that also points to the second instance
+
+The second instance will be used to run *services* container that includes all the lapps services (**that we have salvaged so far**)
 
 ## Adding Galaxy/LAPPS to the instance
 
@@ -81,12 +94,11 @@ Edit `group_vars/galaxyservers.yml` file and change the following variables:
 - `lappsgrid_hostname`: the host name of the server that will be hosting the Galaxy instance. 
 - `galaxy_config.galaxy.admin_users`: the email address(es) of the user accounts that will be granted admin permissions in Galaxy.  Note that the Galaxy user accounts are not created but any user that registers with one of these email addresses will be granted *admin* status.
 
-Notes and questions:
+Notes
 
 - This is where the lappsgrid certificate and key come in (`lappsgrid.crt` and `lappsgrid.key`). Wherever you put them locally is what you use. Still no idea how they were created.
-- Not sure what permissions to use on the certificate and key. I used 600.
 - You will not need to change the name of the lappsgrid certificate and private key, unless new leys are generated under a different name.
-- Galaxy will only listen to incoming traffic to `lappsgrid_hostname` address. If you 
+- Galaxy will only listen to incoming traffic to `lappsgrid_hostname` address.
 
 Edit the `hosts` file, which looks like this in the repository.
 
@@ -110,6 +122,8 @@ $ ansible-playbook galaxy.yml
 ```
 
 This playbook assumes Galaxy is the only application running on the server and puts Galaxy's directories in the root folders `/srv` and `/data`. This can be changed by editing the variables `postgresql_backup_dir`, `galaxy_root` and `galaxy_config.galaxy.file_path` in the `group_vars/galaxyservers.yml` file.
+
+At the end of initializing galaxy on the *first* JS instance, the playbook also spins up a lapps-services container on the second instance. (currently https://github.com/orgs/lappsgrid-services/packages/container/bigtent/77641570?tag=230315 image is being used)
 
 ## Adding KeyCloak
 
