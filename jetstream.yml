@@ -92,6 +92,7 @@
         group: ubuntu
         mode: '0600'
     - name: copy the shared ssh key file for root
+      become: true
       ansible.builtin.copy:
         src: "{{ ansible_ssh_private_key_file }}"
         dest: /root/.ssh/
